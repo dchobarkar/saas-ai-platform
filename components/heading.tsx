@@ -1,17 +1,16 @@
-import React from "react";
-import { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-interface HeadingProps {
+type HeadingProps = {
   title: string;
   description: string;
   icon: LucideIcon;
   iconColor?: string;
   bgColor?: string;
-}
+};
 
-const Heading = ({
+export const Heading = ({
   title,
   description,
   icon: Icon,
@@ -31,5 +30,3 @@ const Heading = ({
     </div>
   );
 };
-
-export default Heading;

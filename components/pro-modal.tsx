@@ -1,17 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
-import {
-  Check,
-  Code,
-  ImageIcon,
-  MessageSquare,
-  Music,
-  VideoIcon,
-  Zap,
-} from "lucide-react";
+import { Check, Zap } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -26,72 +18,41 @@ import {
 } from "@/components/ui/dialog";
 import { useProModal } from "@/hooks/use-pro-modal";
 import { cn } from "@/lib/utils";
+import { TOOLS } from "@/constants";
 
-const tools = [
-  {
-    label: "Conversation",
-    icon: MessageSquare,
-    color: "text-violet-500",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    label: "Music Generation",
-    icon: Music,
-    color: "text-emerald-500",
-    bgColor: "bg-violet-500/10",
-  },
-  {
-    label: "Image Generation",
-    icon: ImageIcon,
-    color: "text-pink-700",
-    bgColor: "bg-pink-700/10",
-  },
-  {
-    label: "Video Generation",
-    icon: VideoIcon,
-    color: "text-orange-700",
-    bgColor: "bg-orange-700/10",
-  },
-  {
-    label: "Code Generation",
-    icon: Code,
-    color: "text-green-700",
-    bgColor: "bg-green-700/10",
-  },
-];
-
-const ProModal = () => {
-  const [loading, setLoading] = useState(false);
+export const ProModal = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const proModal = useProModal();
 
   const onSubscribe = async () => {
     try {
-      setLoading(true);
+      setIsLoading(true);
       const response = await axios.get("/api/stripe");
 
       window.location.href = response.data.url;
-    } catch (error) {
-      toast.error("Something went wrong");
+    } catch (error: unknown) {
+      toast.error("Something went wrong.");
+      console.error("[STRIPE_CLIENT_ERROR]: ", error);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <Dialog open={proModal.isOpen} onOpenChange={proModal.onClose}>
+    <Dialog open={isLoading || proModal.isOpen} onOpenChange={proModal.onClose}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="flex justify-center items-center flex-col gap-y-4 pb-2">
             <div className="flex items-center gap-x-2 font-bold py-1">
               Upgrade to Creati
-              <Badge variant="premium" className="uppercase text-sm py-1">
+              <Badge className="uppercase text-sm py-1" variant="premium">
                 Pro
               </Badge>
             </div>
           </DialogTitle>
 
           <DialogDescription className="text-center pt-2 space-y-2 text-zinc-900 font-medium">
-            {tools.map((tool) => (
+            {TOOLS.map((tool) => (
               <Card
                 key={tool.label}
                 className="p-3 border-black/5 flex items-center justify-between"
@@ -112,18 +73,18 @@ const ProModal = () => {
 
         <DialogFooter>
           <Button
-            disabled={loading}
-            onClick={onSubscribe}
             size="lg"
             variant="premium"
             className="w-full"
+            onClick={onSubscribe}
+            disabled={isLoading}
+            aria-disabled={isLoading}
           >
-            Upgrade <Zap className="w-4 h-4 ml-2 fill-white" />
+            Upgrade
+            <Zap className="w-4 h-4 ml-4 fill-white" />
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default ProModal;

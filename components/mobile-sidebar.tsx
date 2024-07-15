@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Menu } from "lucide-react";
 
-import Sidebar from "@/components/sidebar";
+import { Sidebar } from "@/components/sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-interface MobileSidebarProps {
+type MobileSidebarProps = {
   apiLimitCount: number;
   isPro: boolean;
-}
+};
 
-const MobileSidebar = ({
+export const MobileSidebar = ({
   apiLimitCount = 0,
   isPro = false,
 }: MobileSidebarProps) => {
@@ -26,8 +26,8 @@ const MobileSidebar = ({
 
   return (
     <Sheet>
-      <SheetTrigger>
-        <Button variant="ghost" size="icon" className="md:hidden">
+      <SheetTrigger asChild>
+        <Button size="icon" variant="ghost" className="md:hidden">
           <Menu />
         </Button>
       </SheetTrigger>
@@ -38,5 +38,3 @@ const MobileSidebar = ({
     </Sheet>
   );
 };
-
-export default MobileSidebar;

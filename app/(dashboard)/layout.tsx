@@ -1,11 +1,11 @@
-import React from "react";
+import type { PropsWithChildren } from "react";
 
-import Navbar from "@/components/navbar";
-import Sidebar from "@/components/sidebar";
+import { Navbar } from "@/components/navbar";
+import { Sidebar } from "@/components/sidebar";
 import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 
-const DashboardLayout = async ({ children }: { children: React.ReactNode }) => {
+const DashboardLayout = async ({ children }: PropsWithChildren) => {
   const apiLimitCount = await getApiLimitCount();
   const isPro = await checkSubscription();
 

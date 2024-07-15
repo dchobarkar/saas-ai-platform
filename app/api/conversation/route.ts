@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 
 import { checkApiLimit, increaseApiLimit } from "@/lib/api-limit";
@@ -9,13 +9,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { userId } = auth();
     const body = await req.json();
     const { messages } = body;
 
-    if (!userId) return new NextResponse("Unauthorized", { status: 401 });
+    if (!userId) return new NextResponse("Unauthorized.", { status: 401 });
 
     if (!openai.apiKey)
       return new NextResponse("OpenAI API key not configured.", {
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       return new NextResponse("Messages are required.", { status: 400 });
 
     const freeTrial = await checkApiLimit();
-    const isPro = checkSubscription();
+    const isPro = await checkSubscription();
     if (!freeTrial && !isPro)
       return new NextResponse("Free trial has expired.", { status: 403 });
 
@@ -37,9 +37,9 @@ export async function POST(req: Request) {
 
     if (!isPro) await increaseApiLimit();
 
-    return NextResponse.json(response.choices[0].message);
-  } catch (error) {
-    console.log("[COVERSATION_ERROR]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    return NextResponse.json(response.choices[0].message, { status: 200 });
+  } catch (error: unknown) {
+    console.error("[CONVERSATION_ERROR]: ", error);
+    return new NextResponse("Internal server error.", { status: 500 });
   }
 }

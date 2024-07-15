@@ -1,30 +1,30 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { Video } from "lucide-react";
+import { VideoIcon } from "lucide-react";
 import axios from "axios";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import Heading from "@/components/heading";
+import { Heading } from "@/components/heading";
 import { Empty } from "@/components/empty";
-import Loader from "@/components/loader";
+import { Loader } from "@/components/loader";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useProModal } from "@/hooks/use-pro-modal";
-import { formSchema } from "./constants";
+import { videoFormSchema } from "@/schemas";
 
 const VideoPage = () => {
   const [video, setVideo] = useState<string>();
   const proModal = useProModal();
 
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof videoFormSchema>>({
+    resolver: zodResolver(videoFormSchema),
     defaultValues: {
       prompt: "",
     },
@@ -32,20 +32,20 @@ const VideoPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof videoFormSchema>) => {
     try {
       setVideo(undefined);
 
       const response = await axios.post("/api/video", values);
       setVideo(response.data[0]);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error?.response?.status === 403)
+        proModal.onOpen();
+      else toast.error("Something went wrong.");
 
-      form.reset();
-    } catch (error: any) {
-      if (error?.response?.status === 403) proModal.onOpen();
-      else toast.error("Something went wrong");
-
-      console.log(error);
+      console.error(error);
     } finally {
+      form.reset();
       router.refresh();
     }
   };
@@ -54,8 +54,8 @@ const VideoPage = () => {
     <div>
       <Heading
         title="Video Generation"
-        description="Turn your prompt into video"
-        icon={Video}
+        description="Turn your prompt into video."
+        icon={VideoIcon}
         iconColor="text-orange-700"
         bgColor="bg-orange-700/10"
       />
@@ -65,16 +65,19 @@ const VideoPage = () => {
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
+              autoComplete="off"
+              autoCapitalize="off"
               className="rounded-lg border w-full p-4 px-3 md:px-6 focus-within:shadow-sm grid grid-cols-12 gap-2"
             >
               <FormField
                 name="prompt"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem className="col-span-12 lg:col-span-10">
                     <FormControl className="m-0 p-0">
                       <Input
                         className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
                         disabled={isLoading}
+                        aria-disabled={isLoading}
                         placeholder="Clown fish swimming around a coral reef."
                         {...field}
                       />
@@ -86,6 +89,7 @@ const VideoPage = () => {
               <Button
                 className="col-span-12 lg:col-span-2 w-full"
                 disabled={isLoading}
+                aria-disabled={isLoading}
               >
                 Generate
               </Button>

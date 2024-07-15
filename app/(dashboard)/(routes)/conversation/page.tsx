@@ -10,9 +10,9 @@ import { useRouter } from "next/navigation";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import Heading from "@/components/heading";
+import { Heading } from "@/components/heading";
 import { Empty } from "@/components/empty";
-import Loader from "@/components/loader";
+import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { BotAvatar } from "@/components/bot-avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -20,15 +20,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useProModal } from "@/hooks/use-pro-modal";
 import { cn } from "@/lib/utils";
-import { formSchema } from "./constants";
+import { conversationFormSchema } from "@/schemas";
 
 const ConversationPage = () => {
   const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([]);
   const proModal = useProModal();
 
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof conversationFormSchema>>({
+    resolver: zodResolver(conversationFormSchema),
     defaultValues: {
       prompt: "",
     },
@@ -36,7 +36,7 @@ const ConversationPage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof conversationFormSchema>) => {
     try {
       const userMessage: ChatCompletionMessageParam = {
         role: "user",
@@ -47,15 +47,14 @@ const ConversationPage = () => {
         messages: newMessages,
       });
       setMessages((current) => [...current, userMessage, response.data]);
-
-      form.reset();
-      console.log(values);
     } catch (error: any) {
-      if (error?.response?.status === 403) proModal.onOpen();
-      else toast.error("Something went wrong");
+      if (axios.isAxiosError(error) && error?.response?.status === 403)
+        proModal.onOpen();
+      else toast.error("Something went wrong.");
 
-      console.log(error);
+      console.error(error);
     } finally {
+      form.reset();
       router.refresh();
     }
   };
@@ -64,27 +63,31 @@ const ConversationPage = () => {
     <div>
       <Heading
         title="Conversation"
-        description="Our most advanced conversation model"
+        description="Our most advanced conversation model."
         icon={MessageSquare}
         iconColor="text-violet-500"
         bgColor="bg-violet-500/10"
       />
+
       <div className="px-4 lg:px-8">
         <div>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
+              autoComplete="off"
+              autoCapitalize="off"
               className="rounded-lg border w-full p-4 px-3 md:px-6 focus-within:shadow-sm grid grid-cols-12 gap-2"
             >
               <FormField
                 name="prompt"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem className="col-span-12 lg:col-span-10">
                     <FormControl className="m-0 p-0">
                       <Input
                         className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
                         disabled={isLoading}
-                        placeholder="How do I calculate the area of a Square?"
+                        aria-disabled={isLoading}
+                        placeholder="How do I calculate the radius of a circle?"
                         {...field}
                       />
                     </FormControl>
@@ -95,6 +98,7 @@ const ConversationPage = () => {
               <Button
                 className="col-span-12 lg:col-span-2 w-full"
                 disabled={isLoading}
+                aria-disabled={isLoading}
               >
                 Generate
               </Button>
@@ -110,13 +114,13 @@ const ConversationPage = () => {
           )}
 
           {messages.length === 0 && !isLoading && (
-            <Empty label="No conversation started" />
+            <Empty label="No conversation started." />
           )}
 
           <div className="flex flex-col-reverse gap-y-4">
             {messages.map((message, index) => (
               <div
-                key={index}
+                key={`${index}-${message.content}`}
                 className={cn(
                   "p-8 w-full flex items-start gap-x-8 rounded-lg",
                   message.role === "user"

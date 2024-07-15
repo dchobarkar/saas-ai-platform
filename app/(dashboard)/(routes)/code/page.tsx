@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Code } from "lucide-react";
@@ -11,9 +11,9 @@ import { useRouter } from "next/navigation";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import Heading from "@/components/heading";
+import { Heading } from "@/components/heading";
 import { Empty } from "@/components/empty";
-import Loader from "@/components/loader";
+import { Loader } from "@/components/loader";
 import { UserAvatar } from "@/components/user-avatar";
 import { BotAvatar } from "@/components/bot-avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -21,15 +21,15 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useProModal } from "@/hooks/use-pro-modal";
 import { cn } from "@/lib/utils";
-import { formSchema } from "./constants";
+import { codeFormSchema } from "@/schemas";
 
 const CodePage = () => {
   const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([]);
   const proModal = useProModal();
 
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof codeFormSchema>>({
+    resolver: zodResolver(codeFormSchema),
     defaultValues: {
       prompt: "",
     },
@@ -37,7 +37,7 @@ const CodePage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof codeFormSchema>) => {
     try {
       const userMessage: ChatCompletionMessageParam = {
         role: "user",
@@ -48,15 +48,14 @@ const CodePage = () => {
         messages: newMessages,
       });
       setMessages((current) => [...current, userMessage, response.data]);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error?.response?.status === 403)
+        proModal.onOpen();
+      else toast.error("Something went wrong.");
 
-      form.reset();
-      console.log(values);
-    } catch (error: any) {
-      if (error?.response?.status === 403) proModal.onOpen();
-      else toast.error("Something went wrong");
-
-      console.log(error);
+      console.error(error);
     } finally {
+      form.reset();
       router.refresh();
     }
   };
@@ -65,27 +64,31 @@ const CodePage = () => {
     <div>
       <Heading
         title="Code Generation"
-        description="Generate code using descriptive text"
+        description="Generate code using descriptive text."
         icon={Code}
         iconColor="text-green-700"
         bgColor="bg-green-700/10"
       />
+
       <div className="px-4 lg:px-8">
         <div>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
+              autoComplete="off"
+              autoCapitalize="off"
               className="rounded-lg border w-full p-4 px-3 md:px-6 focus-within:shadow-sm grid grid-cols-12 gap-2"
             >
               <FormField
                 name="prompt"
-                render={({ field }: any) => (
+                render={({ field }) => (
                   <FormItem className="col-span-12 lg:col-span-10">
                     <FormControl className="m-0 p-0">
                       <Input
                         className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
                         disabled={isLoading}
-                        placeholder="Simple toggle button using react hooks."
+                        aria-disabled={isLoading}
+                        placeholder="Simple toggle button using React hooks."
                         {...field}
                       />
                     </FormControl>
@@ -96,6 +99,7 @@ const CodePage = () => {
               <Button
                 className="col-span-12 lg:col-span-2 w-full"
                 disabled={isLoading}
+                aria-disabled={isLoading}
               >
                 Generate
               </Button>
@@ -111,7 +115,7 @@ const CodePage = () => {
           )}
 
           {messages.length === 0 && !isLoading && (
-            <Empty label="No conversation started" />
+            <Empty label="No conversation started." />
           )}
 
           <div className="flex flex-col-reverse gap-y-4">
@@ -126,22 +130,26 @@ const CodePage = () => {
                 )}
               >
                 {message.role === "user" ? <UserAvatar /> : <BotAvatar />}
-
-                <ReactMarkdown
-                  components={{
-                    pre: ({ node, ...props }) => (
-                      <div className="overflow-auto w-full my-2 bg-black/10 p-2 rounded-lg">
-                        <pre {...props} />
-                      </div>
-                    ),
-                    code: ({ node, ...props }) => (
-                      <code className="bg-black/10 rounded-lg p-1" {...props} />
-                    ),
-                  }}
-                  className="text-sm overflow-hidden leading-7"
-                >
-                  {message?.content?.toString()}
-                </ReactMarkdown>
+                <p className="text-sm">
+                  <ReactMarkdown
+                    components={{
+                      pre: ({ node, ...props }) => (
+                        <div className="overflow-auto w-full my-2 bg-black/10 p-2 rounded-lg">
+                          <pre {...props} />
+                        </div>
+                      ),
+                      code: ({ node, ...props }) => (
+                        <code
+                          className="bg-black/10 rounded-lg p-1"
+                          {...props}
+                        />
+                      ),
+                    }}
+                    className="text-sm overflow-hidden leading-7"
+                  >
+                    {message?.content?.toString() || ""}
+                  </ReactMarkdown>
+                </p>
               </div>
             ))}
           </div>

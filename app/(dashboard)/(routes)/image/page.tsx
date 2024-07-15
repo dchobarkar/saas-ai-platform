@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { Download, ImageIcon } from "lucide-react";
@@ -10,9 +10,9 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import Heading from "@/components/heading";
+import { Heading } from "@/components/heading";
 import { Empty } from "@/components/empty";
-import Loader from "@/components/loader";
+import { Loader } from "@/components/loader";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,15 +25,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProModal } from "@/hooks/use-pro-modal";
-import { amountOptions, formSchema, resolutionOptions } from "./constants";
+import { AMOUNTOPTIONS, RESOLUTIONOPTIONS } from "@/constants";
+import { imageFormSchema } from "@/schemas";
 
 const ImagePage = () => {
   const [images, setImages] = useState<string[]>([]);
   const proModal = useProModal();
 
   const router = useRouter();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof imageFormSchema>>({
+    resolver: zodResolver(imageFormSchema),
     defaultValues: {
       prompt: "",
       amount: "1",
@@ -43,21 +44,21 @@ const ImagePage = () => {
 
   const isLoading = form.formState.isSubmitting;
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof imageFormSchema>) => {
     try {
       setImages([]);
       const response = await axios.post("/api/image", values);
       const urls = response.data.map((image: { url: string }) => image.url);
 
       setImages(urls);
-      form.reset();
-      console.log(values);
-    } catch (error: any) {
-      if (error?.response?.status === 403) proModal.onOpen();
-      else toast.error("Something went wrong");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error?.response?.status === 403)
+        proModal.onOpen();
+      else toast.error("Something went wrong.");
 
-      console.log(error);
+      console.error(error);
     } finally {
+      form.reset();
       router.refresh();
     }
   };
@@ -116,7 +117,7 @@ const ImagePage = () => {
                       </FormControl>
 
                       <SelectContent>
-                        {amountOptions.map((option) => (
+                        {AMOUNTOPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
@@ -145,7 +146,7 @@ const ImagePage = () => {
                       </FormControl>
 
                       <SelectContent>
-                        {resolutionOptions.map((option) => (
+                        {RESOLUTIONOPTIONS.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
                           </SelectItem>
