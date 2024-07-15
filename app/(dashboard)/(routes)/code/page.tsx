@@ -18,11 +18,13 @@ import { BotAvatar } from "@/components/bot-avatar";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useProModal } from "@/hooks/use-pro-modal";
 import { cn } from "@/lib/utils";
 import { formSchema } from "./constants";
 
 const CodePage = () => {
   const [messages, setMessages] = useState<ChatCompletionMessageParam[]>([]);
+  const proModal = useProModal();
 
   const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
@@ -49,7 +51,8 @@ const CodePage = () => {
       form.reset();
       console.log(values);
     } catch (error: any) {
-      // TODO: Open Pro Modal
+      if (error?.response?.status === 403) proModal.onOpen();
+
       console.log(error);
     } finally {
       router.refresh();
