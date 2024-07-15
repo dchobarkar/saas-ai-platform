@@ -9,9 +9,13 @@ import { MAX_FREE_COUNTS } from "@/constants";
 
 interface FreeCounterProps {
   apiLimitCount: number;
+  isPro: boolean;
 }
 
-export const FreeCounter = ({ apiLimitCount = 0 }: FreeCounterProps) => {
+export const FreeCounter = ({
+  apiLimitCount = 0,
+  isPro = false,
+}: FreeCounterProps) => {
   const [mounted, setMounted] = useState(false);
   const proModal = useProModal();
 
@@ -19,7 +23,7 @@ export const FreeCounter = ({ apiLimitCount = 0 }: FreeCounterProps) => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted || isPro) return null;
 
   return (
     <div className="px-3">
