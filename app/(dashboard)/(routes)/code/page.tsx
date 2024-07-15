@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 import { Code } from "lucide-react";
 import axios from "axios";
 import * as z from "zod";
@@ -52,6 +53,7 @@ const CodePage = () => {
       console.log(values);
     } catch (error: any) {
       if (error?.response?.status === 403) proModal.onOpen();
+      else toast.error("Something went wrong");
 
       console.log(error);
     } finally {
